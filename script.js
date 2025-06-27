@@ -1,41 +1,3 @@
-const intro = document.querySelector('.intro');
-const introBtn = document.querySelector('.intro-btn');
-
-if (!intro || !introBtn) {
-    console.error('Intro or intro-btn element not found');
-} else {
-    function loadIntro() {
-        intro.innerHTML = "<h2>მოგესალმებით! გთხოვთ, ინსტრუქცია წაიკითხოთ ყურადღებით.</h2>";
-        const instructions = `<p>ეს არის ექსპერიმენტი განათლების ფსიქოლოგიაში.</p>
-            <p>თქვენ უნდა შეავსოთ ტესტი ყურადღებით.</p> 
-            <p><em><strong>წარმოიდგინეთ, რომ საპასუხისმგებლო გამოცდას წერთ.</strong></em></p>
-            <p>ამისთვის თქვენ გექნებათ 10 წუთი.</p>`;
-        intro.insertAdjacentHTML("beforeend", instructions);
-        const consent = `
-            <div class="consent-container">
-                <input type="checkbox" id="consent" name="consent"/>
-                <label for="consent">თანახმა ვარ, ექსპერიმენტში მივიღო მონაწილეობა</label>
-            </div>`;
-        intro.insertAdjacentHTML("beforeend", consent);
-    }
-
-    loadIntro();
-
-    const checkbox = document.getElementById('consent');
-    if (!checkbox) {
-        console.error('Consent checkbox not found');
-    } else {
-        introBtn.addEventListener('click', () => {
-            if (checkbox.checked) {
-                introBtn.disabled = true;
-                loadQuiz();
-            } else {
-                alert('გთხოვთ, მონიშნოთ თანხმობა ექსპერიმენტში მონაწილეობისთვის');
-            }
-        });
-    }
-}
-
 const questions = [
     {
         text: "ყველაფერი, რაც სასიამოვნოა, სულაც არ არის სასარგებლო. ქვემოთ ჩამოთვლილთაგან რომელ დებულებას აქვს იგივე შინაარსი, რაც მოცემულს?",
@@ -129,9 +91,122 @@ const questions = [
     }
 ];
 
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+const participantID = generateUUID();
+const intro = document.querySelector('.intro');
+const participantInfo = document.querySelector('.participant-info');
+const introBtn = document.createElement('button');
+introBtn.type = 'button';
+introBtn.className = 'intro-btn';
+introBtn.id = 'start-info';
+introBtn.setAttribute('aria-label', 'გაგრძელება');
+introBtn.textContent = 'გაგრძელება';
+
+if (!intro || !participantInfo) {
+    console.error('Intro or participant-info element not found');
+} else {
+    function loadIntro() {
+        intro.innerHTML = "<h2>მოგესალმებით! გთხოვთ, ინსტრუქცია წაიკითხოთ ყურადღებით.</h2>";
+        const instructions = `<p>ეს არის ექსპერიმენტი განათლების ფსიქოლოგიაში.</p>
+            <p>თქვენ უნდა შეავსოთ ტესტი ყურადღებით.</p> 
+            <p><em><strong>წარმოიდგინეთ, რომ საპასუხისმგებლო გამოცდას წერთ.</strong></em></p>
+            <p>ამისთვის თქვენ გექნებათ 10 წუთი.</p>`;
+        intro.insertAdjacentHTML("beforeend", instructions);
+        const consent = `
+            <div class="consent-container">
+                <input type="checkbox" id="consent" name="consent"/>
+                <label for="consent">თანახმა ვარ, ექსპერიმენტში მივიღო მონაწილეობა</label>
+            </div>`;
+        intro.insertAdjacentHTML("beforeend", consent);
+        intro.appendChild(introBtn);
+    }
+
+    loadIntro();
+
+    const checkbox = document.getElementById('consent');
+    if (!checkbox) {
+        console.error('Consent checkbox not found');
+    } else {
+        introBtn.addEventListener('click', () => {
+            if (checkbox.checked) {
+                intro.style.display = 'none';
+                participantInfo.style.display = 'block';
+                loadParticipantInfo();
+            } else {
+                alert('გთხოვთ, მონიშნოთ თანხმობა ექსპერიმენტში მონაწილეობისთვის');
+            }
+        });
+    }
+}
+
+function loadParticipantInfo() {
+    participantInfo.innerHTML = `
+        <h2>მონაწილის ინფორმაცია</h2>
+        <form id="participant-form">
+            <div class="form-group">
+                <p><strong>სქესი</strong></p>
+                <input type="radio" name="sex" value="1" id="sex-female">
+                <label for="sex-female">მდედრობითი</label><br>
+                <input type="radio" name="sex" value="2" id="sex-male">
+                <label for="sex-male">მამრობითი</label>
+            </div>
+            <div class="form-group">
+                <p><strong>ასაკი</strong></p>
+                <input type="number" id="age" name="age" min="1" max="120" step="1" placeholder="შეიყვანეთ ასაკი">
+            </div>
+            <div class="form-group">
+                <p><strong>განათლება</strong></p>
+                <select id="education" name="education">
+                    <option value="">აირჩიეთ განათლება</option>
+                    <option value="საშუალო">საშუალო</option>
+                    <option value="პროფესიული">პროფესიული</option>
+                    <option value="სტუდენტი">სტუდენტი</option>
+                    <option value="უმაღლესი">უმაღლესი</option>
+                </select>
+            </div>
+            <button type="button" id="start-quiz" class="intro-btn" disabled>ტესტის დაწყება</button>
+        </form>
+    `;
+
+    const startQuizBtn = document.getElementById('start-quiz');
+    const sexInputs = document.getElementsByName('sex');
+    const ageInput = document.getElementById('age');
+    const educationSelect = document.getElementById('education');
+
+    function checkParticipantInputs() {
+        const sexSelected = Array.from(sexInputs).some(input => input.checked);
+        const ageValid = ageInput.value && Number.isInteger(Number(ageInput.value)) && ageInput.value >= 1 && ageInput.value <= 120;
+        const educationSelected = educationSelect.value !== '';
+        startQuizBtn.disabled = !(sexSelected && ageValid && educationSelected);
+    }
+
+    sexInputs.forEach(input => input.addEventListener('change', checkParticipantInputs));
+    ageInput.addEventListener('input', checkParticipantInputs);
+    educationSelect.addEventListener('change', checkParticipantInputs);
+
+    startQuizBtn.addEventListener('click', () => {
+        const sex = Number(document.querySelector('input[name="sex"]:checked').value);
+        const age = Number(ageInput.value);
+        const education = educationSelect.value;
+        const studentStatus = education === 'სტუდენტი' ? 1 : 2;
+        participantData = { participantID, sex, age, studentStatus };
+        participantInfo.style.display = 'none';
+        loadQuiz();
+    });
+}
+
+let participantData = {};
 let currentQuestionIndex = 0;
 const answers = [];
 const confidences = [];
+const answerChanges = Array(questions.length).fill(0);
+const selectedAnswers = Array(questions.length).fill().map(() => new Set());
 
 function loadQuiz() {
     document.body.innerHTML = `
@@ -181,19 +256,36 @@ function renderQuestion() {
         nextBtn.disabled = !(answerSelected && confidenceSelected);
     }
 
-    answerInputs.forEach(input => input.addEventListener('change', checkInputs));
+    answerInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            selectedAnswers[currentQuestionIndex].add(input.value);
+            answerChanges[currentQuestionIndex] = selectedAnswers[currentQuestionIndex].size;
+            checkInputs();
+        });
+    });
     confidenceSelect.addEventListener('change', checkInputs);
 
     nextBtn.addEventListener('click', () => {
         const selectedAnswer = document.querySelector('input[name="answer"]:checked').value;
-        const selectedConfidence = confidenceSelect.value;
+        const selectedConfidence = Number(confidenceSelect.value);
         answers[currentQuestionIndex] = selectedAnswer;
         confidences[currentQuestionIndex] = selectedConfidence;
 
         if (isLastQuestion) {
+            const totalAnswerChanges = answerChanges.reduce((sum, count) => sum + count, 0);
+            const meanConfidence = confidences.reduce((sum, conf) => sum + conf, 0) / confidences.length;
+            const results = {
+                ParticipantID: participantData.participantID,
+                Sex: participantData.sex,
+                Age: participantData.age,
+                StudentStatus: participantData.studentStatus,
+                TotalOCDScore: 0,
+                TotalAnswerChanges: totalAnswerChanges,
+                MeanConfidence: meanConfidence.toFixed(2)
+            };
+            console.log('Results:', results);
+            downloadCSV([results], 'experiment_results.csv');
             alert('ტესტი გაგზავნილია!');
-            console.log('Answers:', answers);
-            console.log('Confidences:', confidences);
         } else {
             currentQuestionIndex++;
             renderQuestion();
@@ -223,4 +315,18 @@ function startTimer(duration) {
         timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         timeLeft--;
     }, 1000);
+}
+
+function downloadCSV(data, filename) {
+    const headers = ['ParticipantID,Sex,Age,StudentStatus,TotalOCDScore,TotalAnswerChanges,MeanConfidence'];
+    const rows = data.map(row => 
+        `${row.ParticipantID},${row.Sex},${row.Age},${row.StudentStatus},${row.TotalOCDScore},${row.TotalAnswerChanges},${row.MeanConfidence}`
+    );
+    const csvContent = [...headers, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }

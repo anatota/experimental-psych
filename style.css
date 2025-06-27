@@ -7,16 +7,16 @@ body {
     line-height: 1.6;
 }
 
-.intro {
+.intro, .participant-info {
     margin-bottom: 20px;
 }
 
-.consent-container {
+.consent-container, .form-group {
     margin: 20px 0;
     font-size: 1.1em;
 }
 
-.intro-btn, #next-btn {
+.intro-btn, #next-btn, #start-quiz {
     padding: 10px 20px;
     font-size: 1em;
     background-color: #007bff;
@@ -26,11 +26,11 @@ body {
     cursor: pointer;
 }
 
-.intro-btn:hover, #next-btn:hover {
+.intro-btn:hover, #next-btn:hover, #start-quiz:hover {
     background-color: #0056b3;
 }
 
-.intro-btn:disabled, #next-btn:disabled {
+.intro-btn:disabled, #next-btn:disabled, #start-quiz:disabled {
     background-color: #cccccc;
     cursor: not-allowed;
 }
@@ -76,8 +76,12 @@ body {
     margin-bottom: 10px;
 }
 
-.confidence select {
+.confidence select, .form-group select, .form-group input[type="number"] {
     padding: 5px;
     font-size: 1em;
     width: 150px;
+}
+
+.form-group input[type="radio"] {
+    margin: 5px 10px;
 }
