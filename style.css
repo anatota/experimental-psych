@@ -1,0 +1,83 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    text-align: center;
+    line-height: 1.6;
+}
+
+.intro {
+    margin-bottom: 20px;
+}
+
+.consent-container {
+    margin: 20px 0;
+    font-size: 1.1em;
+}
+
+.intro-btn, #next-btn {
+    padding: 10px 20px;
+    font-size: 1em;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.intro-btn:hover, #next-btn:hover {
+    background-color: #0056b3;
+}
+
+.intro-btn:disabled, #next-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#timer {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 20px 0;
+    color: #333;
+}
+
+#time {
+    color: #007bff;
+}
+
+#time.red {
+    color: red;
+}
+
+.question {
+    text-align: left;
+    margin: 20px 0;
+}
+
+.question p {
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.question label {
+    margin-left: 10px;
+}
+
+.question input[type="radio"] {
+    margin: 5px 0;
+}
+
+.confidence {
+    margin-top: 20px;
+}
+
+.confidence p {
+    margin-bottom: 10px;
+}
+
+.confidence select {
+    padding: 5px;
+    font-size: 1em;
+    width: 150px;
+}
