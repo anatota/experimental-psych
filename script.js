@@ -108,12 +108,15 @@ introBtn.id = 'start-info';
 introBtn.setAttribute('aria-label', 'გაგრძელება');
 introBtn.textContent = 'გაგრძელება';
 
+// Google Apps Script Web App URL
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9XUdtCxqTlv7FyHbG6rZHoxyUE2VeH9ceRPo1CDvGdBYI0bqbVjuc_HwYnzd5KeEtTw/exec';
+
 if (!intro || !participantInfo) {
     console.error('Intro or participant-info element not found');
 } else {
     function loadIntro() {
         intro.innerHTML = "<h2>მოგესალმებით! გთხოვთ, ინსტრუქცია წაიკითხოთ ყურადღებით.</h2>";
-        const instructions = `<p>ეს არის ექსპერიმენტი განათლების ფსიქოლოგიაში.</p>
+        const instructions = `<p>ეს არის ექსპერიმენტი განათლის ფსიქოლოგიაში.</p>
             <p>თქვენ უნდა შეავსოთ ტესტი ყურადღებით.</p> 
             <p><em><strong>წარმოიდგინეთ, რომ საპასუხისმგებლო გამოცდას წერთ.</strong></em></p>
             <p>ამისთვის თქვენ გექნებათ 10 წუთი.</p>`;
@@ -207,11 +210,196 @@ const answers = [];
 const confidences = [];
 const answerChanges = Array(questions.length).fill(0);
 const selectedAnswers = Array(questions.length).fill().map(() => new Set());
+let currentSurveyIndex = 0;
+const surveyResponses = [];
+
+const surveyQuestions = [
+    {
+        text: "იმდენ ნივთს/სხვადასხვა რამეს ვინახავ, რომ ისინი ხელს მიშლის.",
+        options: [
+            { id: "s1a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s1b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s1c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s1d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s1e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "იმაზე ხშირად ვამოწმებ რაღაცებს, ვიდრე საჭიროა.",
+        options: [
+            { id: "s2a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s2b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s2c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s2d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s2e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვღიზიანდები, როცა საგნები სწორად არ არის დალაგებული.",
+        options: [
+            { id: "s3a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s3b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s3c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s3d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s3e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვგრძნობ საჭიროებას, რომ თვლა უნდა დავიწყო, როცა რაღაცას ვაკეთებ.",
+        options: [
+            { id: "s4a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s4b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s4c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s4d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s4e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "მიჭირს რაიმე საგნის შეხება, როცა ვიცი, რომ მას შეხებიან უცნობები ან კონკრეტული ადამიანები.",
+        options: [
+            { id: "s5a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s5b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s5c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s5d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s5e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "მიჭირს საკუთარი ფიქრების კონტროლი.",
+        options: [
+            { id: "s6a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s6b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s6c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s6d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s6e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვაგროვებ ისეთ ნივთებს, რომლებიც არ მჭირდება.",
+        options: [
+            { id: "s7a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s7b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s7c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s7d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s7e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "განმეორებით ვამოწმებ კარებს, ფანჯრებს, უჯრებს და ა.შ.",
+        options: [
+            { id: "s8a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s8b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s8c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s8d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s8e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვღიზიანდები, როცა სხვები საგნებს უცვლიან იმ თანმიმდევრობას, როგორშიც მაქვს დალაგებული.",
+        options: [
+            { id: "s9a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s9b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s9c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s9d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s9e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "საჭიროებას ვგრძნობ, რომ უნდა გავიმეორო გარკვეული რიცხვები.",
+        options: [
+            { id: "s10a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s10b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s10c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s10d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s10e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ზოგჯერ უეცრად მიწევს საკუთარი თავის დაბანა ან გაწმენდა მხოლოდ იმიტომ, რომ თავს დაბინძურებულად ვგრძნობ.",
+        options: [
+            { id: "s11a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s11b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s11c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s11d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s11e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვღელავ არასასურველი ფიქრების გამო, რომლებიც ჩემს თავში უეცრად ჩნდება.",
+        options: [
+            { id: "s12a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s12b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s12c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s12d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s12e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვერიდები ნივთების გადაყრას, რადგან მეშინია, რომ მომავალში დამჭირდება.",
+        options: [
+            { id: "s13a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s13b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s13c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s13d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s13e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "განმეორებით ვამოწმებ გაზის, წყლის ონკანებსა და შუქის ჩამრთველებს მათი გამორთვის შემდეგაც კი.",
+        options: [
+            { id: "s14a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s14b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s14c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s14d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s14e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ვგრძნობ საჭიროებას, რომ საგნები კონკრეტული თანმიმდევრობით იყოს დალაგებული.",
+        options: [
+            { id: "s15a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s15b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s15c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s15d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s15e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "მგონია, რომ არსებობს „კარგი“ და „ცუდი“ რიცხვები.",
+        options: [
+            { id: "s16a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s16b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s16c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s16d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s16e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ხელებს უფრო ხშირად და მეტხანს ვიბან, ვიდრე საჭიროა.",
+        options: [
+            { id: "s17a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s17b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s17c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s17d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s17e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    },
+    {
+        text: "ხშირად მაწუხებს არასასიამოვნო შინაარსის ფიქრები და მიჭირს მათგან გათავისუფლება.",
+        options: [
+            { id: "s18a", value: 0, text: "საერთოდ არ მახასიათებს" },
+            { id: "s18b", value: 1, text: "ცოტათი მახასიათებს" },
+            { id: "s18c", value: 2, text: "საშუალოდ მახასიათებს" },
+            { id: "s18d", value: 3, text: "ძალიან მახასიათებს" },
+            { id: "s18e", value: 4, text: "უკიდურესად მახასიათებს" }
+        ]
+    }
+];
 
 function loadQuiz() {
     document.body.innerHTML = `
         <h2>ტესტი დაიწყო!</h2>
-        <p>თქვენ გაქვთ 10 წუთი ტესტის შესასრულებლად.</p>
+        <p>თქვენ გაქვთ 10 წუთი ტესტისა და გამოკითხვის შესასრულებლად.</p>
         <div id="timer">დარჩენილი დრო: <span id="time">10:00</span></div>
         <div id="question-container"></div>
     `;
@@ -241,7 +429,7 @@ function renderQuestion() {
                     </select>
                 </div>
             </div>
-            <button type="button" id="next-btn" disabled>${isLastQuestion ? 'ტესტის გაგზავნა' : 'შემდეგი'}</button>
+            <button type="button" id="next-btn" disabled>${isLastQuestion ? 'გამოკითხვის დაწყება' : 'შემდეგი'}</button>
         </form>
     `;
 
@@ -272,23 +460,98 @@ function renderQuestion() {
         confidences[currentQuestionIndex] = selectedConfidence;
 
         if (isLastQuestion) {
+            loadSurvey();
+        } else {
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+    });
+}
+
+function loadSurvey() {
+    currentSurveyIndex = 0;
+    document.body.innerHTML = `
+        <h2>გამოკითხვა</h2>
+        <p>მონიშნეთ ის ვარიანტი, რომელიც ფიქრობთ, რომ ყველაზე მეტად გახასიათებთ.</p>
+        <div id="timer">დარჩენილი დრო: <span id="time"></span></div>
+        <div id="survey-container"></div>
+    `;
+    renderSurveyQuestion();
+}
+
+function renderSurveyQuestion() {
+    const surveyContainer = document.getElementById('survey-container');
+    const surveyQuestion = surveyQuestions[currentSurveyIndex];
+    const isLastSurveyQuestion = currentSurveyIndex === surveyQuestions.length - 1;
+    surveyContainer.innerHTML = `
+        <form id="survey-form">
+            <div class="survey">
+                <p><strong>${currentSurveyIndex + 1}.</strong> ${surveyQuestion.text}</p>
+                ${surveyQuestion.options.map(option => `
+                    <input type="radio" name="survey-answer" value="${option.value}" id="${option.id}">
+                    <label for="${option.id}">${option.text}</label><br>
+                `).join('')}
+            </div>
+            <button type="button" id="survey-next-btn" disabled>${isLastSurveyQuestion ? 'გამოკითხვის გაგზავნა' : 'შემდეგი'}</button>
+        </form>
+    `;
+
+    const form = document.getElementById('survey-form');
+    const nextBtn = document.getElementById('survey-next-btn');
+    const answerInputs = document.getElementsByName('survey-answer');
+
+    function checkSurveyInputs() {
+        const answerSelected = Array.from(answerInputs).some(input => input.checked);
+        nextBtn.disabled = !answerSelected;
+    }
+
+    answerInputs.forEach(input => input.addEventListener('change', checkSurveyInputs));
+
+    nextBtn.addEventListener('click', () => {
+        const selectedAnswer = Number(document.querySelector('input[name="survey-answer"]:checked').value);
+        surveyResponses[currentSurveyIndex] = selectedAnswer;
+
+        if (isLastSurveyQuestion) {
             const totalAnswerChanges = answerChanges.reduce((sum, count) => sum + count, 0);
             const meanConfidence = confidences.reduce((sum, conf) => sum + conf, 0) / confidences.length;
+            const totalOCDScore = surveyResponses.reduce((sum, score) => sum + score, 0);
             const results = {
                 ParticipantID: participantData.participantID,
                 Sex: participantData.sex,
                 Age: participantData.age,
                 StudentStatus: participantData.studentStatus,
-                TotalOCDScore: 0,
+                TotalOCDScore: totalOCDScore,
                 TotalAnswerChanges: totalAnswerChanges,
                 MeanConfidence: meanConfidence.toFixed(2)
             };
             console.log('Results:', results);
-            downloadCSV([results], 'experiment_results.csv');
-            alert('ტესტი გაგზავნილია!');
+            // Send results to Google Apps Script
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(results),
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.result === 'success') {
+                    alert('ტესტი და გამოკითხვა გაგზავნილია!');
+                    document.body.innerHTML = `
+                        <h2>მადლობა მონაწილეობისთვის!</h2>
+                        <p>თქვენი პასუხები შენახულია.</p>
+                    `;
+                } else {
+                    alert('შეცდომა მონაცემების გაგზავნისას: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error sending data:', error);
+                alert('შეცდომა მონაცემების გაგზავნისას. გთხოვთ, სცადეთ თავიდან.');
+            });
         } else {
-            currentQuestionIndex++;
-            renderQuestion();
+            currentSurveyIndex++;
+            renderSurveyQuestion();
         }
     });
 }
@@ -317,6 +580,7 @@ function startTimer(duration) {
     }, 1000);
 }
 
+// Optional: Retained for debugging
 function downloadCSV(data, filename) {
     const headers = ['ParticipantID,Sex,Age,StudentStatus,TotalOCDScore,TotalAnswerChanges,MeanConfidence'];
     const rows = data.map(row => 
