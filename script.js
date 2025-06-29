@@ -109,7 +109,7 @@ introBtn.setAttribute('aria-label', 'გაგრძელება');
 introBtn.textContent = 'გაგრძელება';
 
 // Google Apps Script Web App URL
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby9XUdtCxqTlv7FyHbG6rZHoxyUE2VeH9ceRPo1CDvGdBYI0bqbVjuc_HwYnzd5KeEtTw/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqLGMi_j3wTJGokKBG8v2BGKqdYv6qHCXRrIPAfe5_mc6gh-2hnmYcPJ2oqNzFRmFtEg/exec';
 
 if (!intro || !participantInfo) {
     console.error('Intro or participant-info element not found');
