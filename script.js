@@ -91,6 +91,24 @@ const questions = [
     }
 ];
 
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyB-tRFw2Xy0oSCSfczM_s545B2eeK2_cw4",
+  authDomain: "survey-app-43e37.firebaseapp.com",
+  projectId: "survey-app-43e37",
+  storageBucket: "survey-app-43e37.firebasestorage.app",
+  messagingSenderId: "246041382866",
+  appId: "1:246041382866:web:1271b4e0e4aa598b93820b",
+  measurementId: "G-7GJDJWRHYF"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 function generateUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -107,9 +125,6 @@ introBtn.className = 'intro-btn';
 introBtn.id = 'start-info';
 introBtn.setAttribute('aria-label', 'გაგრძელება');
 introBtn.textContent = 'გაგრძელება';
-
-// Google Apps Script Web App URL
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzqLGMi_j3wTJGokKBG8v2BGKqdYv6qHCXRrIPAfe5_mc6gh-2hnmYcPJ2oqNzFRmFtEg/exec';
 
 if (!intro || !participantInfo) {
     console.error('Intro or participant-info element not found');
@@ -507,7 +522,7 @@ function renderSurveyQuestion() {
 
     answerInputs.forEach(input => input.addEventListener('change', checkSurveyInputs));
 
-    nextBtn.addEventListener('click', () => {
+    nextBtn.addEventListener('click', async () => {
         const selectedAnswer = Number(document.querySelector('input[name="survey-answer"]:checked').value);
         surveyResponses[currentSurveyIndex] = selectedAnswer;
 
@@ -522,33 +537,23 @@ function renderSurveyQuestion() {
                 StudentStatus: participantData.studentStatus,
                 TotalOCDScore: totalOCDScore,
                 TotalAnswerChanges: totalAnswerChanges,
-                MeanConfidence: meanConfidence.toFixed(2)
+                MeanConfidence: meanConfidence.toFixed(2),
+                Timestamp: new Date().toISOString()
             };
             console.log('Results:', results);
-            // Send results to Google Apps Script
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify(results),
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.result === 'success') {
-                    alert('ტესტი და გამოკითხვა გაგზავნილია!');
-                    document.body.innerHTML = `
-                        <h2>მადლობა მონაწილეობისთვის!</h2>
-                        <p>თქვენი პასუხები შენახულია.</p>
-                    `;
-                } else {
-                    alert('შეცდომა მონაცემების გაგზავნისას: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error sending data:', error);
+
+            try {
+                const docRef = await addDoc(collection(db, "surveyResults"), results);
+                console.log("Document written with ID: ", docRef.id);
+                alert('ტესტი და გამოკითხვა გაგზავნილია!');
+                document.body.innerHTML = `
+                    <h2>მადლობა მონაწილეობისთვის!</h2>
+                    <p>თქვენი პასუხები შენახულია.</p>
+                `;
+            } catch (error) {
+                console.error('Error adding document: ', error);
                 alert('შეცდომა მონაცემების გაგზავნისას. გთხოვთ, სცადეთ თავიდან.');
-            });
+            }
         } else {
             currentSurveyIndex++;
             renderSurveyQuestion();
